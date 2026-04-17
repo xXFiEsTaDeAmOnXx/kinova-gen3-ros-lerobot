@@ -47,3 +47,9 @@ RUN bash -c "\
   colcon build --symlink-install"
 
 WORKDIR ${ROS_WS}
+
+COPY docker/start_gen3_teleop.sh /root/start_gen3_teleop.sh
+
+# Executable machen
+RUN chmod +x /root/start_gen3_teleop.sh
+
