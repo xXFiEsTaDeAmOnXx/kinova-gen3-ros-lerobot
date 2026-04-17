@@ -1,0 +1,23 @@
+services:
+  lerobot-ros:
+    image: lerobot-ros:jazzy
+    container_name: lerobot-ros
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      ROS_DOMAIN_ID: $ROS_DOMAIN_ID
+      DISPLAY: $DISPLAY
+      QT_X11_NO_MITSHM: '1'
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,video,utility,graphics
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ../lerobot-ros/lerobot_robot_ros:/root/ros2_ws/src/lerobot-ros/lerobot_robot_ros
+      - ../lerobot-ros/lerobot_teleoperator_devices:/root/ros2_ws/src/lerobot-ros/lerobot_teleoperator_devices
+    network_mode: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    command: >
+      tail -f /dev/null 
