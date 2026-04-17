@@ -31,7 +31,6 @@ class GripperActionType(Enum):
 
 @dataclass
 class ROS2InterfaceConfig:
-    # Namespace used by ros2_control / MoveIt2 nodes
     namespace: str = ""
 
     arm_joint_names: list[str] = field(
@@ -46,15 +45,11 @@ class ROS2InterfaceConfig:
     )
     gripper_joint_name: str = "gripper_joint"
 
-    # Base link name for computing end effector pose / velocity
-    # Only applicable for cartesian control
     base_link: str = "base_link"
 
-    # Only applicable if velocity control is used.
     max_linear_velocity: float = 0.10
-    max_angular_velocity: float = 0.25  # rad/s
+    max_angular_velocity: float = 0.25
 
-    # Only applicable if position control is used.
     min_joint_positions: list[float] | None = None
     max_joint_positions: list[float] | None = None
 
@@ -65,88 +60,78 @@ class ROS2InterfaceConfig:
 
 
 @dataclass
+class AnninAR4ROS2InterfaceConfig(ROS2InterfaceConfig):
+    gripper_joint_name: str = "gripper_jaw1_joint"
+    base_link: str = "base_link"
+    min_joint_positions: list[float] | None = field(
+        default_factory=lambda: [-2.9671, -0.7330, -1.5533, -2.8798, -1.8326, -2.7053]
+    )
+    max_joint_positions: list[float] | None = field(
+        default_factory=lambda: [2.9671, 1.5708, 0.9076, 2.8798, 1.8326, 2.7053]
+    )
+    gripper_open_position: float = 0.014
+    gripper_close_position: float = 0.0
+    gripper_action_type: GripperActionType = GripperActionType.ACTION
+
+
+@dataclass
+class SO101ROSInterfaceConfig(ROS2InterfaceConfig):
+    arm_joint_names: list[str] = field(default_factory=lambda: ["1", "2", "3", "4", "5"])
+    gripper_joint_name: str = "6"
+    base_link: str = "base"
+    min_joint_positions: list[float] | None = field(
+        default_factory=lambda: [-1.91986, -1.74533, -1.74533, -1.65806, -2.79253]
+    )
+    max_joint_positions: list[float] | None = field(
+        default_factory=lambda: [1.91986, 1.74533, 1.5708, 1.65806, 2.79253]
+    )
+    gripper_open_position: float = 1.74533
+    gripper_close_position: float = 0.0
+    gripper_action_type: GripperActionType = GripperActionType.TRAJECTORY
+
+
+@dataclass
+class KinovaGen3ROS2InterfaceConfig(ROS2InterfaceConfig):
+    arm_joint_names: list[str] = field(
+        default_factory=lambda: ["joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6", "joint_7"]
+    )
+    gripper_joint_name: str = "finger_joint"
+    base_link: str = "base_link"
+    min_joint_positions: list[float] | None = field(
+        default_factory=lambda: [-2.0, -2.41, -2.0, -2.0, -2.0, -2.0, -2.0]
+    )
+    max_joint_positions: list[float] | None = field(
+        default_factory=lambda: [2.0, 2.41, 2.0, 2.0, 2.0, 2.0, 2.0]
+    )
+    gripper_open_position: float = 0.0
+    gripper_close_position: float = 1.2
+    gripper_action_type: GripperActionType = GripperActionType.ACTION
+
+
+@dataclass
 class ROS2Config(RobotConfig):
-    # Action type for controlling the robot. Can be 'cartesian_velocity' or 'joint_position'.
     action_type: ActionType = ActionType.JOINT_POSITION
-
-    # `max_relative_target` limits the magnitude of the relative positional target vector for safety purposes.
-    # Set this to a positive scalar to have the same value for all motors, or a list that is the same length as
-    # the number of motors in your follower arms.
     max_relative_target: int | None = None
-
-    # cameras
     cameras: dict[str, CameraConfig] = field(default_factory=dict)
-
-    # ROS2 interface configuration
     ros2_interface: ROS2InterfaceConfig = field(default_factory=ROS2InterfaceConfig)
 
 
 @RobotConfig.register_subclass("annin_ar4_mk1")
 @dataclass
 class AnninAR4Config(ROS2Config):
-    """Annin Robotics AR4 robot configuration - extends ROS2Config with
-    AR4-specific settings
-    """
-
     action_type: ActionType = ActionType.CARTESIAN_VELOCITY
-
-    ros2_interface: ROS2InterfaceConfig = field(
-        default_factory=lambda: ROS2InterfaceConfig(
-            gripper_joint_name="gripper_jaw1_joint",
-            base_link="base_link",
-            min_joint_positions=[-2.9671, -0.7330, -1.5533, -2.8798, -1.8326, -2.7053],
-            max_joint_positions=[2.9671, 1.5708, 0.9076, 2.8798, 1.8326, 2.7053],
-            gripper_open_position=0.014,
-            gripper_close_position=0.0,
-            gripper_action_type=GripperActionType.ACTION,
-        ),
-    )
+    ros2_interface: AnninAR4ROS2InterfaceConfig = field(default_factory=AnninAR4ROS2InterfaceConfig)
 
 
 @RobotConfig.register_subclass("so101_ros")
 @dataclass
 class SO101ROSConfig(ROS2Config):
-    """Configuration for the ROS 2 version of SO101: https://github.com/Pavankv92/lerobot_ws."""
-
     action_type: ActionType = ActionType.JOINT_TRAJECTORY
-
-    ros2_interface: ROS2InterfaceConfig = field(
-        default_factory=lambda: ROS2InterfaceConfig(
-            arm_joint_names=["1", "2", "3", "4", "5"],
-            gripper_joint_name="6",
-            base_link="base",
-            min_joint_positions=[-1.91986, -1.74533, -1.74533, -1.65806, -2.79253],
-            max_joint_positions=[1.91986, 1.74533, 1.5708, 1.65806, 2.79253],
-            gripper_open_position=1.74533,
-            gripper_close_position=0.0,
-        ),
-    )
+    ros2_interface: SO101ROSInterfaceConfig = field(default_factory=SO101ROSInterfaceConfig)
 
 
 @RobotConfig.register_subclass("kinova_gen3")
 @dataclass
 class KinovaGen3Config(ROS2Config):
-    """Configuration for Kinova Gen3 robot arm with 7 joints."""
-
     action_type: ActionType = ActionType.JOINT_TRAJECTORY
-
-    ros2_interface: ROS2InterfaceConfig = field(
-        default_factory=lambda: ROS2InterfaceConfig(
-            arm_joint_names=[
-                "joint_1",
-                "joint_2",
-                "joint_3",
-                "joint_4",
-                "joint_5",
-                "joint_6",
-                "joint_7",
-            ],
-            gripper_joint_name="finger_joint",
-            base_link="base_link",
-            min_joint_positions=[-2.0, -2.41, -2.0, -2.0, -2.0, -2.0, -2.0],
-            max_joint_positions=[2.0, 2.41, 2.0, 2.0, 2.0, 2.0, 2.0],
-            gripper_open_position=0.0,
-            gripper_close_position=1.2,
-            gripper_action_type=GripperActionType.ACTION,
-        ),
-    )
+    ros2_interface: KinovaGen3ROS2InterfaceConfig = field(default_factory=KinovaGen3ROS2InterfaceConfig)

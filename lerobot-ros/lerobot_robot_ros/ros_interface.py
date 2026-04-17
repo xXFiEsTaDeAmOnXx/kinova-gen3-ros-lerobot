@@ -111,7 +111,16 @@ class ROS2Interface:
         self.executor.add_node(self.robot_node)
         self.executor_thread = threading.Thread(target=self.executor.spin, daemon=True)
         self.executor_thread.start()
-        time.sleep(3)  # Give some time to connect to services and receive messages
+
+        # Wait for first joint state message
+        start_time = time.time()
+        while self._last_joint_state is None and time.time() - start_time < 10.0:
+            time.sleep(0.1)
+
+        if self._last_joint_state is None:
+            logger.warning("No joint state received within 10 seconds.")
+        else:
+            logger.info(f"Joint state received: {list(self._last_joint_state.get('position', {}).keys())}")
 
         self.is_connected = True
 
@@ -230,24 +239,34 @@ class ROS2Interface:
         positions = {}
         velocities = {}
         name_to_index = {name: i for i, name in enumerate(msg.name)}
+
         for joint_name in self.config.arm_joint_names:
             idx = name_to_index.get(joint_name)
-            if idx is None:
-                raise ValueError(f"Joint '{joint_name}' not found in joint state.")
-            positions[joint_name] = msg.position[idx]
-            velocities[joint_name] = msg.velocity[idx]
+            if idx is not None:
+                positions[joint_name] = msg.position[idx]
+                velocities[joint_name] = msg.velocity[idx]
+            else:
+                if not hasattr(self, "_warned_missing_joint_state"):
+                    self._warned_missing_joint_state = set()
+                if joint_name not in self._warned_missing_joint_state:
+                    logger.warning(f"Joint '{joint_name}' not found in joint state message.")
+                    self._warned_missing_joint_state.add(joint_name)
 
         if self.config.gripper_joint_name:
             idx = name_to_index.get(self.config.gripper_joint_name)
-            if idx is None:
-                raise ValueError(
-                    f"Gripper joint '{self.config.gripper_joint_name}' not found in joint state."
-                )
-            positions[self.config.gripper_joint_name] = msg.position[idx]
-            velocities[self.config.gripper_joint_name] = msg.velocity[idx]
+            if idx is not None:
+                positions[self.config.gripper_joint_name] = msg.position[idx]
+                velocities[self.config.gripper_joint_name] = msg.velocity[idx]
+            else:
+                if not hasattr(self, "_warned_missing_gripper_state"):
+                    logger.warning(
+                        f"Gripper joint '{self.config.gripper_joint_name}' not found in joint state message."
+                    )
+                    self._warned_missing_gripper_state = True
 
-        self._last_joint_state["position"] = positions
-        self._last_joint_state["velocity"] = velocities
+        if positions:
+            self._last_joint_state["position"] = positions
+            self._last_joint_state["velocity"] = velocities
 
     def disconnect(self):
         if self.joint_state_sub:
