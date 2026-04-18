@@ -116,6 +116,26 @@ class ROS2Robot(Robot):
 
         return obs_dict
 
+    def seed_teleop_if_needed(self, teleop) -> None:
+        """Seed teleop target positions from the current robot joint state (once only)."""
+        if not hasattr(teleop, "seed_from_robot_state"):
+            return
+        if getattr(teleop, "_target_positions", None) is not None:
+            return  # already seeded
+        joint_state = self.ros2_interface.joint_state
+        if joint_state is None:
+            return
+        positions = [
+            joint_state["position"].get(j, 0.0)
+            for j in self.config.ros2_interface.arm_joint_names
+        ]
+        gripper_pos = 0.0
+        if self.config.ros2_interface.gripper_joint_name:
+            gripper_pos = joint_state["position"].get(
+                self.config.ros2_interface.gripper_joint_name, 0.0
+            )
+        teleop.seed_from_robot_state(positions, gripper_pos)
+
     def send_action(self, action: dict[str, float]) -> dict[str, float]:
         """Command arm to move to a target joint configuration.
 

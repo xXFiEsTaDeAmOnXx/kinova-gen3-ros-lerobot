@@ -22,13 +22,20 @@ logger = logging.getLogger(__name__)
 #   Quit: Ctrl+C
 
 KEY_MAPPINGS = {
-    "q": (0, -1), "a": (0, +1),
-    "w": (1, -1), "s": (1, +1),
-    "e": (2, -1), "d": (2, +1),
-    "r": (3, -1), "f": (3, +1),
-    "t": (4, -1), "g": (4, +1),
-    "y": (5, -1), "h": (5, +1),
-    "u": (6, -1), "j": (6, +1),
+    "q": (0, -1),
+    "a": (0, +1),
+    "w": (1, -1),
+    "s": (1, +1),
+    "e": (2, -1),
+    "d": (2, +1),
+    "r": (3, -1),
+    "f": (3, +1),
+    "t": (4, -1),
+    "g": (4, +1),
+    "y": (5, -1),
+    "h": (5, +1),
+    "u": (6, -1),
+    "j": (6, +1),
 }
 GRIPPER_KEYS = {"o": -1, "l": +1}
 
@@ -106,7 +113,9 @@ class KeyboardJointTeleop(KeyboardTeleop):
         self._running = False
         self._is_connected = False
 
-        logger.info(f"KeyboardJointTeleop initialized with keys: {self.config.arm_action_keys}")
+        logger.info(
+            f"KeyboardJointTeleop initialized with keys: {self.config.arm_action_keys}"
+        )
         logger.info(f"Gripper key: {self.config.gripper_action_key}")
 
     # ------------------------------------------------------------------
@@ -222,6 +231,17 @@ class KeyboardJointTeleop(KeyboardTeleop):
             self.curr_joint_actions[self.config.gripper_action_key] = max(
                 0.0, min(1.0, self.curr_joint_actions[self.config.gripper_action_key])
             )
+        print(
+            "\r  J1:{:.3f}  J2:{:.3f}  J3:{:.3f}  J4:{:.3f}  J5:{:.3f}  J6:{:.3f}  J7:{:.3f}  G:{:.3f}".format(
+                *[
+                    self.curr_joint_actions.get(k, 0.0)
+                    for k in self.config.arm_action_keys
+                ],
+                self.curr_joint_actions.get(self.config.gripper_action_key, 0.0),
+            ),
+            end="",
+            flush=True,
+        )
 
         return self.curr_joint_actions.copy()
 

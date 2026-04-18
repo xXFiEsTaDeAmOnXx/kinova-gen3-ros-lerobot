@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import uuid
 import threading
 import time
 
@@ -90,7 +91,6 @@ class ROS2Interface:
                 gripper_action_topic,
                 callback_group=ReentrantCallbackGroup(),
             )
-            self._goal_msg = GripperCommand.Goal()
 
         self.joint_state_sub = self.robot_node.create_subscription(
             JointState,
@@ -127,21 +127,19 @@ class ROS2Interface:
 
         if unnormalize:
             if (
-                self.config.min_joint_positions is None
-                or self.config.max_joint_positions is None
+                self.config.min_joint_positions is not None
+                and self.config.max_joint_positions is not None
             ):
-                raise ValueError(
-                    "Joint position normalization requires min and max joint positions to be set."
-                )
-            joint_positions = [
-                min(max(pos, min_pos), max_pos)
-                for pos, min_pos, max_pos in zip(
-                    joint_positions,
-                    self.config.min_joint_positions,
-                    self.config.max_joint_positions,
-                    strict=True,
-                )
-            ]
+                joint_positions = [
+                    min(max(pos, min_pos), max_pos)
+                    for pos, min_pos, max_pos in zip(
+                        joint_positions,
+                        self.config.min_joint_positions,
+                        self.config.max_joint_positions,
+                        strict=True,
+                    )
+                ]
+            # else: min/max is None → infinite range, pass positions through unchanged
 
         if len(joint_positions) != len(self.config.arm_joint_names):
             raise ValueError(
@@ -231,8 +229,12 @@ class ROS2Interface:
                 return True
 
             self._last_gripper_goal = float(gripper_goal)
-            self._goal_msg.command.position = float(gripper_goal)
-            self.gripper_action_client.send_goal_async(self._goal_msg)
+            # Create a fresh Goal message each call so the Action Server
+            # never sees a duplicate goal-ID (which causes a fatal crash).
+            fresh_goal = GripperCommand.Goal()
+            fresh_goal.command.position = float(gripper_goal)
+            fresh_goal.command.max_effort = 100.0
+            self.gripper_action_client.send_goal_async(fresh_goal)
             return True
 
     @property

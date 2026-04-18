@@ -15,12 +15,10 @@ python3 - <<EOF
 import sys
 import os
 
-
 pkg_parent = "/root/ros2_ws/src/lerobot-ros"
 sys.path.insert(0, pkg_parent)
 
-
-import lerobot_robot_ros.config   # registriert Subklassen
+import lerobot_robot_ros.config
 from lerobot_robot_ros.robot import KinovaGen3, SO101ROS, AnninAR4, ROS2Robot
 
 import lerobot_teleoperator_devices.config_keyboard_joint
@@ -40,6 +38,7 @@ sys.argv = [
     "--teleop.id", "keyboard",
     "--teleop.arm_action_keys", "['joint_1.pos', 'joint_2.pos', 'joint_3.pos', 'joint_4.pos', 'joint_5.pos', 'joint_6.pos', 'joint_7.pos']",
     "--teleop.gripper_action_key", "gripper.pos",
+    "--fps", "60",
     "--display_data", "false",
 ]
 

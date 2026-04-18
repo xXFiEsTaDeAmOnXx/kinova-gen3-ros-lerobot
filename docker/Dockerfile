@@ -6,7 +6,6 @@ ENV PATH="${VENV_PATH}/bin:${PATH}"
 
 WORKDIR ${ROS_WS}
 
-# System dependencies
 RUN apt-get update && apt-get install -y \
   python3-pip \
   python3-venv \
@@ -25,22 +24,17 @@ RUN apt-get update && apt-get install -y \
   ros-jazzy-std-srvs \
   && rm -rf /var/lib/apt/lists/*
 
-# Copy source
 COPY lerobot-ros ${ROS_WS}/src/lerobot-ros
 
-# --system-site-packages: venv sieht rclpy & andere ROS-Python-Pakete aus apt
 RUN python3 -m venv --system-site-packages ${VENV_PATH}
 
-# pip upgraden
 RUN pip install --upgrade pip setuptools wheel
 
-# lerobot-ros installieren — zieht automatisch lerobot>=0.4.0,<0.5.0 mit rein
 RUN --mount=type=cache,target=/root/.cache/pip \
   pip install \
   -e ${ROS_WS}/src/lerobot-ros/lerobot_robot_ros \
   -e ${ROS_WS}/src/lerobot-ros/lerobot_teleoperator_devices
 
-# ROS2 Workspace bauen (braucht ROS sourced)
 RUN bash -c "\
   source /opt/ros/jazzy/setup.bash && \
   cd ${ROS_WS} && \
@@ -48,8 +42,7 @@ RUN bash -c "\
 
 WORKDIR ${ROS_WS}
 
-COPY docker/start_gen3_teleop.sh /root/start_gen3_teleop.sh
+COPY docker/start_gen3_teleop.sh /start_gen3_teleop.sh
 
-# Executable machen
-RUN chmod +x /root/start_gen3_teleop.sh
+RUN chmod +x /start_gen3_teleop.sh
 

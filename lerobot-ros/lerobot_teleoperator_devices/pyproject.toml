@@ -20,7 +20,7 @@ name = "lerobot-teleoperator-devices"
 version = "0.1.0"
 description = "🤗 Teleoperators for lerobot"
 authors = [
-    { name = "Yifei Cheng", email = "ycheng517@gmail.com" },
+    { name = "Niklas ", email = "niklas@exmaple.de" },
 ]
 readme = "README.md"
 license = { text = "Apache-2.0" }
