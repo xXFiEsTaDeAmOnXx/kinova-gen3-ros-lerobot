@@ -112,26 +112,34 @@ class KinovaGen3ROS2InterfaceConfig(ROS2InterfaceConfig):
             "joint_7",
         ]
     )
+
     gripper_joint_name: str = "finger_joint"
     base_link: str = "base_link"
-    min_joint_positions = [
-        -6.283,  # joint_1 (free)
-        -2.25,  # joint_2 (real limit)
-        -6.283,  # joint_3 (free)
-        -2.58,  # joint_4 (real limit)
-        -6.283,  # joint_5 (free)
-        -2.10,  # joint_6 (real limit)
-        -6.283,  # joint_7 (free)
-    ]
-    max_joint_positions = [
-        6.283,
-        2.25,
-        6.283,
-        2.58,
-        6.283,
-        2.10,
-        6.283,
-    ]
+
+    min_joint_positions: list[float] = field(
+        default_factory=lambda: [
+            -3.283,  # joint_1
+            -2.25,  # joint_2
+            -3.283,  # joint_3
+            -2.58,  # joint_4
+            -3.283,  # joint_5
+            -2.10,  # joint_6
+            -3.283,  # joint_7
+        ]
+    )
+
+    max_joint_positions: list[float] = field(
+        default_factory=lambda: [
+            3.283,
+            2.25,
+            3.283,
+            2.58,
+            3.283,
+            2.10,
+            3.283,
+        ]
+    )
+
     gripper_open_position: float = 0.0
     gripper_close_position: float = 1.2
     gripper_action_type: GripperActionType = GripperActionType.ACTION
